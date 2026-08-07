@@ -122,9 +122,10 @@
     </div>
 
     <!-- Right panel - Login form (centered with spacing) -->
-     <StatesComponent />
+     
     <div class="w-full lg:w-3/5 flex items-center justify-center px-6 py-12 bg-white">
       <div class="w-full max-w-sm mx-auto flex flex-col items-center">
+        <StatesComponent />
         <!-- Mobile brand -->
         <div class="lg:hidden flex items-center gap-3 mb-10">
           <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
@@ -203,9 +204,9 @@
           <button
             type="submit"
             class="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-500/25 transition-all duration-200 hover:from-emerald-600 hover:to-teal-700 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-            :disabled="submitting"
+            :disabled="apiState.loading"
           >
-            <span v-if="!submitting">Sign in</span>
+            <span v-if="!apiState.loading">Sign in</span>
             <span v-else class="flex items-center justify-center gap-2">
               <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -268,7 +269,8 @@ import useVuelidate from '@vuelidate/core'
 import { required, email as emailFormat } from '@vuelidate/validators'
 import StatesComponent from '@/components/states/StateComponent.vue'
 import { useApiState } from '@/stores/apiState'
-
+import api from '@/api/auth/auth.js'
+import { useRouter } from 'vue-router'
 const form = reactive({
   email: '',
   password: '',
@@ -281,18 +283,35 @@ const rules = {
 }
 
 const v$ = useVuelidate(rules, form)
+const router = useRouter()
 
 const apiState = useApiState()
-const submitting = ref(false)
 
 async function handleSubmit() {
   const isValid = await v$.value.$validate()
   if (!isValid) return
+  apiState.setLoading(true)
+  apiState.setMessage('Signing in...')
+  apiState.setSuccess(false)
+  apiState.setError(false)
+  try {
+    await api.login(form.email, form.password) // Simulate API call
+    apiState.setSuccess(true)
+    apiState.setMessage('Successfully signed in!')
+    apiState.setError(false)
+    router.push({ name: 'dashboard' })
+  }
+  catch (error) {
+    apiState.setError(true)
 
-  submitting.value = true
-  // No backend wired up yet — replace with a real auth call later.
-  setTimeout(() => {
-    submitting.value = false
-  }, 600)
+    const response = error.response?.data
+    apiState.setMessage(response?.message ?? 'Failed to sign in. Please try again.')
+
+    if (response?.errors && typeof response.errors === 'object') {
+      apiState.setErrors(Object.values(response.errors).flat())
+    }
+  } finally {
+    apiState.setLoading(false)
+  }
 }
 </script>

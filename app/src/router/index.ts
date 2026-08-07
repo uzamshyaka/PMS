@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useAuthStore } from '@/stores/auth.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,8 +22,29 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
+      meta: { guestOnly: true },
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../views/Home/DashboardView.vue'),
+      meta: { requiresAuth: true },
     },
   ],
+})
+
+router.beforeEach((to) => {
+  // useAuthStore() must be called here, not at module scope, since Pinia
+  // isn't active yet when this file is first imported in main.ts.
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
 })
 
 export default router

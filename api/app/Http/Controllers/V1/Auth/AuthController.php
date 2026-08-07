@@ -3,27 +3,46 @@
 namespace App\Http\Controllers\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\Auth\LoginRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        try {
+            $credentials = $request->validated();
 
-        if (! Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'The provided credentials are incorrect.',
-            ], 422);
+            if (! Auth::attempt($credentials)) {
+                return api_response(
+                    Response::$statusTexts[Response::HTTP_UNAUTHORIZED],
+                    Response::HTTP_UNAUTHORIZED,
+                    'Invalid credentials',
+                    null,
+                );
+            }
+
+            $request->session()->regenerate();
+
+            return api_response(
+                Response::$statusTexts[Response::HTTP_OK],
+                Response::HTTP_OK,
+                'Login successful',
+                [
+                    'user' => Auth::user(),
+                ],
+            );
+        } catch (\Throwable $th) {
+            return api_response(
+                Response::$statusTexts[Response::HTTP_INTERNAL_SERVER_ERROR],
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'An error occurred while logging in.Invalid Password or email address',
+                null,
+                $th->getMessage(),
+            );
         }
-
-        $request->session()->regenerate();
-
-        return response()->json(['user' => Auth::user()]);
     }
 
     public function logout(Request $request)
