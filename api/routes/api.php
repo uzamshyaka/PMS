@@ -1,13 +1,14 @@
 <?php
 
-use App\Http\Controllers\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/user', [AuthController::class, 'user']);
+/*
+| Version 1 of the API. Each module owns a routes.php file that is mounted
+| here. Admin routes live under /api/v1/admin; public routes will live
+| under /api/v1/public once public modules exist.
+*/
+Route::prefix('v1')->name('v1.')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
+        require app_path('Modules/Authentication/routes.php');
     });
 });
