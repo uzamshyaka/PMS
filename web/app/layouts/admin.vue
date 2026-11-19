@@ -4,7 +4,7 @@ const menuOpen = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen lg:flex">
+  <div class="min-h-screen bg-slate-50 text-slate-800 lg:flex">
     <aside
       class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 transition-transform lg:static lg:translate-x-0"
       :class="menuOpen ? 'translate-x-0' : '-translate-x-full'"

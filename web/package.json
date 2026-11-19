@@ -9,12 +9,14 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "dependencies": {
+    "@nuxt/fonts": "^1.2.0",
     "@pinia/nuxt": "^1.0.3",
     "@tailwindcss/vite": "^4.3.5",
     "@vuelidate/core": "^2.0.3",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.4.0",
+    "@playwright/test": "^1.65.1",
     "@vue/test-utils": "^2.6.0",
     "happy-dom": "^21.0.4",
     "typescript": "~6.0.0",

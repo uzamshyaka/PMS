@@ -4,11 +4,12 @@ A vehicle showcase and listing management system. Administrators manage
 listings and approve them for publication. Visitors browse vehicles and
 contact owners directly.
 
-**Current state: Phase 0 (foundation).** Working features:
+**Current state: Phase 0 (foundation) plus the public website design.** Working features:
 
 - Administrator login, logout and session restore
 - Role-based access control
 - The standard API response format
+- Public website (home, inventory, vehicle details, about, contact) running on **sample vehicle data**
 
 Vehicle, owner, approval, enquiry and content modules are **not built yet**.
 See [docs/architecture.md](docs/architecture.md).
@@ -117,4 +118,8 @@ cd web
 npm run test        # unit and component tests
 npm run typecheck   # vue-tsc
 npm run build       # production build
+npm run test:e2e    # Playwright layout checks against the build (run `npx playwright install chromium` once)
 ```
+
+`test:e2e` saves full-page screenshots at 1440, 768 and 390 px to
+`web/e2e/screenshots/` (git-ignored) for comparison with the design reference.

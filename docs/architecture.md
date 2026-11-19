@@ -240,6 +240,57 @@ Admin route protection (`admin-auth.global.ts`):
 
 Any 401 from a non-auth endpoint clears the store and returns to the login page.
 
+### Public website
+
+The public site follows a premium-showroom design: black, white and muted
+bronze, Montserrat for display type, Allura for the script heading and Inter
+for body text. All fonts are self-hosted at build time by `@nuxt/fonts`.
+
+| Route | Page |
+|---|---|
+| `/` | Hero, benefits bar, featured vehicles, about, why choose us, contact band |
+| `/inventory` | Filterable, sortable grid. Filters live in the URL query (server-rendered, shareable) |
+| `/inventory/:slug` | Gallery, price, key specs, description, features, condition, inspections, enquiry panel |
+| `/about`, `/contact` | Static content and showroom contact details |
+
+Design tokens are in `app/assets/css/main.css` (`@theme`). Components are
+grouped by folder, and Nuxt prefixes each name with its folder:
+
+| Folder | Contents |
+|---|---|
+| `site/` | Header, footer, logo, CSS showroom backdrop |
+| `home/` | Homepage sections |
+| `vehicle/` | Vehicle card, filters, gallery, inspections, enquiry panel |
+| `ui/` | Button, badge, section heading, page hero, image, icon |
+
+**Vehicle data is demonstration data.** `useVehicleCatalogue()` is the single
+source of public vehicle data. It currently serves the labelled sample set in
+`app/data/demo-vehicles.ts`, controlled by `runtimeConfig.public.demoCatalogue`
+(env `NUXT_PUBLIC_DEMO_CATALOGUE`). Pages show a "Sample listings" note while
+it is on. When the public vehicles API exists, only this composable changes.
+
+**Contact.** Enquiry buttons use the showroom's own phone and WhatsApp number
+from `runtimeConfig.public.contact`. The current values are **placeholders**:
+set them through `NUXT_PUBLIC_CONTACT_PHONE`, `NUXT_PUBLIC_CONTACT_WHATSAPP`,
+`NUXT_PUBLIC_CONTACT_EMAIL`, `NUXT_PUBLIC_CONTACT_ADDRESS` and
+`NUXT_PUBLIC_CONTACT_HOURS`. Owner contact details are never shown publicly.
+
+**Inspection claims** always show their source: declared by owner, recorded by
+our team, or independent inspection. The "Verified" badge appears only for
+independent inspections that have supporting evidence (`isVerifiedInspection`).
+
+**Photos.** `<UiImage>` falls back to a styled placeholder (or a CSS showroom
+backdrop in heroes) when a file is missing, so photos can be added by
+dropping files into `web/public/images/` with no code changes:
+
+| File | Size (ratio) | Used by |
+|---|---|---|
+| `hero.webp` | 2400×1350 (16:9) | Homepage hero |
+| `showroom.webp` | 1600×1200 (4:3) | About section, About page |
+| `inventory-hero.webp`, `about-hero.webp` | 2400×800 | Page banners |
+| `vehicles/<slug>-1.webp` | 1600×760 (21:10) | Card and first gallery image |
+| `vehicles/<slug>-2.webp`, `-3.webp` | 1600×1000 | Gallery |
+
 ---
 
 ## 6. Planned modules
