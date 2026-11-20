@@ -10,8 +10,11 @@ contact owners directly.
 - Role-based access control
 - The standard API response format
 - Public website (home, inventory, vehicle details, about, contact) running on **sample vehicle data**
+- Admin dashboard on **live data**: vehicles, owners, listing reviews (approval publishes), enquiries, catalogue, website content, users, settings, audit logs
+- Vehicle photos stored in an **S3 bucket** (local S3-compatible service in Docker)
+- Website enquiry form; admin changes to listings and content appear on the website
 
-Vehicle, owner, approval, enquiry and content modules are **not built yet**.
+Still to do: versioned Terms & Conditions, and showing the last approved version of a listing while edits are under review.
 See [docs/architecture.md](docs/architecture.md).
 
 | Directory | Contents |
@@ -42,9 +45,11 @@ cp web/.env.example web/.env
 # 2. Start the stack
 docker compose up -d --build
 
-# 3. First time only: app key, migrations and seed data. These are never run automatically.
+# 3. First time only: app key, migrations, seed data (roles, catalogue, local admin) and the photo bucket.
+#    None of these run automatically.
 docker compose exec api php artisan key:generate
 docker compose exec api php artisan migrate --seed
+docker compose exec api php artisan storage:ensure-bucket
 ```
 
 | Service | URL |
@@ -53,6 +58,7 @@ docker compose exec api php artisan migrate --seed
 | Admin | http://localhost:3000/admin |
 | API | http://localhost:8081/api/v1 |
 | MySQL | `localhost:3307` from the host, `db:3306` inside Docker |
+| S3 (vehicle photos) | http://localhost:8334 (bucket `car-showcase`) |
 
 `migrate --seed` creates the four roles and their permissions. In the `local`
 environment it also creates a Super Admin from `DEV_ADMIN_EMAIL` /

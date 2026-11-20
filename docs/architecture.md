@@ -291,11 +291,70 @@ dropping files into `web/public/images/` with no code changes:
 | `vehicles/<slug>-1.webp` | 1600×760 (21:10) | Card and first gallery image |
 | `vehicles/<slug>-2.webp`, `-3.webp` | 1600×1000 | Gallery |
 
+### Admin dashboard and the business API
+
+The admin works on **live data** through the Laravel API. Changes made there
+(approved vehicles, homepage text, contact details, branding, SEO) appear on
+the public website, and website enquiries appear in the admin.
+
+**Backend modules** (`api/app/Modules/`), all under `/api/v1/admin` behind
+`auth:sanctum` + `active` + per-route permissions:
+
+| Module | Endpoints (summary) | Permission |
+|---|---|---|
+| Vehicles | list/show/create/update, `POST vehicles/{id}/transitions`, reviews, activity, `POST vehicle-images` | `manage-vehicles` (read also `review-vehicle-listings`; approve/reject need `review-vehicle-listings`) |
+| Owners | list/options/show/create/update, status, vehicles, activity | `manage-vehicles` |
+| Catalogue | makes/models/features list, create/update, activate/deactivate | `manage-vehicles` (read also reviewers) |
+| Enquiries | list/show, status, assignee, notes, assignees | `manage-enquiries` |
+| Users | list/show/create/update (with initial password), roles, activity | `manage-users` / `manage-roles` |
+| Website content | `content/{homepage,about,contact,branding,seo}`, `content-images` | `manage-website-content` |
+| Settings | `content/settings` | `manage-system-settings` |
+| Audit logs | list, facets | `view-audit-logs` |
+| Dashboard | `dashboard/stats`, `notifications` | `access-admin-dashboard` |
+
+**Public API** (`/api/v1/public`, no auth): `vehicles` (published only,
+filters/sort/paging), `vehicles/facets`, `vehicles/{slug}`, `site` (public
+content), `POST enquiries` (5 per hour per IP; hidden spam-trap field).
+`PublicVehicleResource` never includes owner details, references or staff names.
+
+**Listing lifecycle:** `VehicleAction`/`VehicleStatus` enums (API) and
+`utils/vehicle-status.ts` (web) hold the same rules. All transitions run in
+`VehicleService` inside a transaction, with review history and audit entries.
+Approval publishes. **Editing a live listing takes it off the website and back
+to review** until it is approved again (simple and safe; showing the previous
+approved version meanwhile would need listing revisions, a possible later step).
+
+**Vehicle photos → S3.** Uploads are validated (JPEG/PNG/WebP, ≤ 8 MB, ≥ 320×240),
+decoded and re-encoded as WebP (≤ 2400 px; EXIF/GPS data removed; non-images
+rejected) by `VehicleImageService`, and stored on the disk named by
+`VEHICLE_IMAGES_DISK` (default `s3`). Photos are uploaded first and attached when
+the vehicle is saved; photos removed from a vehicle are deleted from the bucket.
+Logos and sharing images use the same pipeline (`site/` folder).
+
+- **Local:** the Docker `s3` service (SeaweedFS, S3-compatible) on
+  `http://localhost:8334`, bucket `car-showcase`, created with
+  `php artisan storage:ensure-bucket`.
+- **Production:** set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+  `AWS_DEFAULT_REGION`, `AWS_BUCKET`, leave `AWS_ENDPOINT` empty and
+  `AWS_USE_PATH_STYLE_ENDPOINT=false`, and set `AWS_URL` to the bucket's public
+  URL or a CloudFront domain. Objects are written with public-read visibility
+  and a one-year cache header; grant the IAM user `s3:PutObject`,
+  `s3:PutObjectAcl`, `s3:GetObject`, `s3:DeleteObject` on the bucket (or use a
+  bucket policy for public reads and drop the ACL).
+
+**Frontend data sources.** `runtimeConfig.public.adminDataSource` = `api`
+(default) or `mock`; `runtimeConfig.public.demoCatalogue` = `false` (default)
+or `true`. Unit tests and the Playwright layout checks use `mock` + sample
+data, so they need no backend. Admin pages only talk to
+`services/contracts` (implemented by `services/api` and `services/mock`).
+Website content is loaded once per page by `plugins/site-content.ts` (before
+server rendering), with built-in defaults if the API is unreachable.
+
 ---
 
 ## 6. Planned modules
 
-**Not implemented.** No routes, tables or pages exist for these yet:
+**Status of the original module list.** Implemented: Owners, Vehicles, Features, Media (photos), Approvals, Enquiries, Website content, Audit logs, Dashboard. Not yet: Terms & Conditions (versioned) and per-listing revisions. The table below is kept for reference:
 
 | Module | Responsibility |
 |---|---|
@@ -322,6 +381,7 @@ enquiry data is kept.
 |---|---|---|
 | API | PHPUnit 12 (`php artisan test`) | MySQL **`carshowcase_test`** only |
 | Web | Vitest 5 + `@nuxt/test-utils` + Vue Test Utils + happy-dom | none (API mocked) |
+| Browser | Playwright: public layout checks plus admin flows per role (auth responses faked in the test, no backend needed) | production build |
 
 Test database safety:
 

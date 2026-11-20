@@ -26,6 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.permissions.includes(permission) ?? false
   }
 
+  function canAny(permissions: string[]): boolean {
+    return permissions.some(can)
+  }
+
   /** Restore the session from the cookie. A 401 simply means "not logged in". */
   async function fetchUser(): Promise<void> {
     try {
@@ -80,5 +84,5 @@ export const useAuthStore = defineStore('auth', () => {
     initialized.value = true
   }
 
-  return { user, initialized, loading, error, isAuthenticated, can, fetchUser, login, logout, clear }
+  return { user, initialized, loading, error, isAuthenticated, can, canAny, fetchUser, login, logout, clear }
 })

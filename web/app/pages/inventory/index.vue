@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import type { CatalogueFacets } from '~/composables/useVehicleCatalogue'
+
 const catalogue = useVehicleCatalogue()
 const { query, activeCount, update, reset } = useVehicleFilters()
 
-// Default order: date added to the system, newest first.
-const results = computed(() => catalogue.search(query.value))
-const paged = computed(() => paginate(results.value, query.value.page))
+// Default order: date added to the system, newest first. Server-rendered; refetches when filters change.
+const { data: paged, status } = await useAsyncData('inventory', () => catalogue.search(query.value), {
+  watch: [query],
+  default: () => ({ items: [], meta: { current_page: 1, per_page: VEHICLES_PER_PAGE, total: 0, last_page: 1, from: null, to: null } }),
+})
+const { data: facets } = await useAsyncData('inventory-facets', () => catalogue.facets(), { default: (): CatalogueFacets => ({ makes: [], modelsByMake: {}, locations: [] }) })
 const routeQuery = computed(() => toRouteQuery(query.value))
-const models = computed(() => catalogue.modelsFor(query.value.make))
+const models = computed(() => (query.value.make ? facets.value.modelsByMake[query.value.make] ?? [] : [...new Set(Object.values(facets.value.modelsByMake).flat())].sort()))
+const total = computed(() => paged.value.meta.total)
 const filtersOpen = ref(false)
 
 useSeoMeta({
@@ -32,7 +38,7 @@ useSeoMeta({
       </div>
 
       <div id="inventory-filters" class="mt-6 lg:mt-0 lg:block" :class="filtersOpen ? 'block' : 'hidden'">
-        <VehicleFilters :query="query" :makes="catalogue.makes" :models="models" :locations="catalogue.locations" :active-count="activeCount" @update="update" @reset="reset" />
+        <VehicleFilters :query="query" :makes="facets.makes" :models="models" :locations="facets.locations" :active-count="activeCount" @update="update" @reset="reset" />
       </div>
 
       <div class="mt-10 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
@@ -40,7 +46,7 @@ useSeoMeta({
           <template v-if="paged.meta.last_page > 1">
             Showing <strong class="text-ink">{{ paged.meta.from }}–{{ paged.meta.to }}</strong> of
           </template>
-          <strong class="text-ink">{{ results.length }}</strong> {{ results.length === 1 ? 'vehicle' : 'vehicles' }}<template v-if="paged.meta.last_page === 1"> found</template>
+          <strong class="text-ink">{{ total }}</strong> {{ total === 1 ? 'vehicle' : 'vehicles' }}<template v-if="paged.meta.last_page === 1"> found</template>
         </p>
         <label class="flex items-center gap-3">
           <span class="label-caps text-[10px] text-muted">Sort by</span>
@@ -55,10 +61,10 @@ useSeoMeta({
         </label>
       </div>
 
-      <div v-if="results.length" class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-test="inventory-grid">
+      <div v-if="total" class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" :class="status === 'pending' && 'opacity-60'" data-test="inventory-grid">
         <VehicleCard v-for="(vehicle, i) in paged.items" :key="vehicle.slug" :vehicle="vehicle" :eager="i < 3" show-date />
       </div>
-      <UiPagination v-if="results.length" :meta="paged.meta" :query="routeQuery" label="Inventory pages" class="mt-10" />
+      <UiPagination v-if="total" :meta="paged.meta" :query="routeQuery" label="Inventory pages" class="mt-10" />
       <div v-else class="mt-10 border border-dashed border-line px-6 py-16 text-center">
         <p class="font-display text-lg font-bold uppercase tracking-[0.04em]">No vehicles match your search</p>
         <p class="mt-2 text-sm text-muted">Try removing a filter or two.</p>

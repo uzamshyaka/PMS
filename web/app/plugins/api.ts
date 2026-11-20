@@ -3,11 +3,15 @@
  * request and echoes the XSRF-TOKEN cookie back as the X-XSRF-TOKEN header.
  * No credentials or tokens are ever stored in localStorage.
  */
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin({
+  name: 'api',
+  setup(nuxtApp) {
   const config = useRuntimeConfig()
 
   const api = $fetch.create({
-    baseURL: config.public.apiBase,
+    // During server-side rendering inside Docker the API is reached by its
+    // internal address; browsers use the public one.
+    baseURL: import.meta.server && config.apiBaseServer ? String(config.apiBaseServer) : config.public.apiBase,
     credentials: 'include',
     headers: {
       Accept: 'application/json',
@@ -38,6 +42,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   })
 
   return { provide: { api } }
+  },
 })
 
 function readCookie(name: string): string | null {

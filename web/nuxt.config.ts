@@ -25,12 +25,17 @@ export default defineNuxtConfig({
 
   // Overridden at runtime by NUXT_PUBLIC_* environment variables.
   runtimeConfig: {
+    // Server-only: the API's address for server-side rendering (NUXT_API_BASE_SERVER), e.g. http://api:8000 in Docker.
+    apiBaseServer: '',
     public: {
       apiBase: 'http://localhost:8081',
       appName: 'Car Showcase',
-      // Serve the labelled demonstration vehicles until the public API exists.
-      demoCatalogue: true,
-      // Showroom (business) contact. PLACEHOLDER values: replace before going live.
+      // true = labelled sample vehicles instead of the public API (automated layout tests).
+      demoCatalogue: false,
+      // Admin data source: 'api' (Laravel) or 'mock' (in-memory prototype for tests/demos).
+      adminDataSource: 'api',
+      // Fallback showroom contact, used only if the API is unreachable. Manage the real
+      // values under Admin → Website → Contact details.
       contact: {
         phone: '+254 700 000 000',
         whatsapp: '254700000000',

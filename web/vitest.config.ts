@@ -5,7 +5,11 @@ export default defineVitestConfig({
   test: {
     environment: 'nuxt',
     environmentOptions: {
-      nuxt: { domEnvironment: 'happy-dom' },
+      nuxt: {
+        domEnvironment: 'happy-dom',
+        // Unit/component tests use the sample catalogue and the in-memory admin services.
+        overrides: { runtimeConfig: { public: { demoCatalogue: true, adminDataSource: 'mock' } } },
+      },
     },
     include: ['tests/**/*.spec.ts'],
   },

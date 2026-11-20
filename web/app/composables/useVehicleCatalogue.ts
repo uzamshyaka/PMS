@@ -1,33 +1,70 @@
+import type { PaginationMeta } from '~/types/api'
 import { DEMO_VEHICLES } from '~/data/demo-vehicles'
+import type { ApiEnvelope } from '~/types/api'
 import type { ListingType, PublicVehicle, VehicleQuery } from '~/types/vehicle'
 
+export interface CatalogueFacets {
+  makes: string[]
+  modelsByMake: Record<string, string[]>
+  locations: string[]
+}
+
+export interface CataloguePage {
+  items: PublicVehicle[]
+  meta: PaginationMeta
+}
+
+const PUBLIC = '/api/v1/public'
+
 /**
- * Single entry point for public vehicle data. Today it serves the labelled
- * demonstration data set; when the public API exists, only this composable
- * changes (to call /api/v1/public/vehicles) and the pages stay the same.
+ * Single entry point for public vehicle data, used by the homepage, the
+ * inventory and the details page.
+ *  - Default: the Laravel public API (published listings only).
+ *  - runtimeConfig.public.demoCatalogue = true: the labelled sample data set
+ *    (used by the automated layout tests).
  */
 export function useVehicleCatalogue() {
   const isDemo = useRuntimeConfig().public.demoCatalogue === true
-  const vehicles: readonly PublicVehicle[] = isDemo ? DEMO_VEHICLES : []
+  const api = useApi()
 
-  const makes = [...new Set(vehicles.map((v) => v.make))].sort()
-  const locations = [...new Set(vehicles.map((v) => v.location))].sort()
+  async function search(query: VehicleQuery, perPage = VEHICLES_PER_PAGE): Promise<CataloguePage> {
+    if (isDemo) return paginate(sortVehicles(filterVehicles(DEMO_VEHICLES, query), query.sort), query.page, perPage)
 
-  function modelsFor(make?: string): string[] {
-    return [...new Set(vehicles.filter((v) => !make || v.make === make).map((v) => v.model))].sort()
+    const res = await api<ApiEnvelope<PublicVehicle[]>>(`${PUBLIC}/vehicles`, { query: { ...toRouteQuery(query), page: query.page ?? 1, per_page: perPage } })
+    return { items: res.data, meta: (res.meta as { pagination: PaginationMeta }).pagination }
   }
 
-  function search(query: VehicleQuery): PublicVehicle[] {
-    return sortVehicles(filterVehicles(vehicles, query), query.sort)
+  /** Homepage rows: the vehicles chosen under Website → Homepage, else the newest. */
+  async function featured(limit: number, type?: ListingType): Promise<PublicVehicle[]> {
+    if (isDemo) return sortVehicles(DEMO_VEHICLES.filter((v) => v.featured && (!type || v.listingType === type)), 'newest').slice(0, limit)
+
+    const res = await api<ApiEnvelope<PublicVehicle[]>>(`${PUBLIC}/vehicles`, { query: { featured: 1, type, per_page: limit } })
+    return res.data
   }
 
-  function featured(limit = 4, type?: ListingType): PublicVehicle[] {
-    return sortVehicles(vehicles.filter((v) => v.featured && (!type || v.listingType === type)), 'newest').slice(0, limit)
+  async function findBySlug(slug: string): Promise<PublicVehicle | null> {
+    if (isDemo) return DEMO_VEHICLES.find((v) => v.slug === slug) ?? null
+    try {
+      return (await api<ApiEnvelope<PublicVehicle>>(`${PUBLIC}/vehicles/${encodeURIComponent(slug)}`)).data
+    }
+    catch (e) {
+      if (toApiError(e).status === 404) return null
+      throw e
+    }
   }
 
-  function findBySlug(slug: string): PublicVehicle | undefined {
-    return vehicles.find((v) => v.slug === slug)
+  /** Filter options from what is actually listed. */
+  async function facets(): Promise<CatalogueFacets> {
+    if (isDemo) {
+      const makes = [...new Set(DEMO_VEHICLES.map((v) => v.make))].sort()
+      return {
+        makes,
+        modelsByMake: Object.fromEntries(makes.map((m) => [m, [...new Set(DEMO_VEHICLES.filter((v) => v.make === m).map((v) => v.model))].sort()])),
+        locations: [...new Set(DEMO_VEHICLES.map((v) => v.location))].sort(),
+      }
+    }
+    return (await api<ApiEnvelope<CatalogueFacets>>(`${PUBLIC}/vehicles/facets`)).data
   }
 
-  return { isDemo, total: vehicles.length, makes, locations, modelsFor, search, featured, findBySlug }
+  return { isDemo, search, featured, findBySlug, facets }
 }

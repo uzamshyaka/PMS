@@ -5,6 +5,8 @@ describe('format', () => {
   it('formats Kenyan Shillings without decimals', () => {
     expect(formatKes(5490000)).toBe('KES 5,490,000')
     expect(formatKes(999.6)).toBe('KES 1,000')
+    expect(formatKes(null)).toBe('—')
+    expect(formatKm(undefined)).toBe('—')
   })
 
   it('formats kilometres', () => {

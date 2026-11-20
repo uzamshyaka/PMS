@@ -22,4 +22,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (auth.isAuthenticated && onLoginPage) {
     return navigateTo(safeAdminRedirect(to.query.redirect))
   }
+
+  if (to.path === ADMIN_ROOT) {
+    return navigateTo(ADMIN_HOME_PATH)
+  }
+
+  // Pages declare the permission they need via definePageMeta({ permission }).
+  const required = to.meta.permission
+  if (auth.isAuthenticated && required && !auth.can(required) && to.path !== ADMIN_FORBIDDEN_PATH) {
+    return navigateTo({ path: ADMIN_FORBIDDEN_PATH, query: { from: to.fullPath } })
+  }
 })

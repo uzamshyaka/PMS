@@ -19,7 +19,9 @@ export default defineConfig({
   webServer: {
     command: 'node .output/server/index.mjs',
     url: `http://localhost:${PORT}`,
-    env: { PORT: String(PORT) },
+    // Layout tests run on the labelled sample vehicles and the in-memory admin
+    // prototype, so they need no backend.
+    env: { PORT: String(PORT), NUXT_PUBLIC_DEMO_CATALOGUE: 'true', NUXT_PUBLIC_ADMIN_DATA_SOURCE: 'mock' },
     reuseExistingServer: false,
     timeout: 30_000,
   },

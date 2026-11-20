@@ -7,9 +7,9 @@ import middleware from '~/middleware/admin-auth.global'
 const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn((target: unknown) => target) }))
 mockNuxtImport('navigateTo', () => navigateToMock)
 
-function route(path: string, query: Record<string, string> = {}): RouteLocationNormalized {
+function route(path: string, query: Record<string, string> = {}, meta: Record<string, unknown> = {}): RouteLocationNormalized {
   const search = new URLSearchParams(query).toString()
-  return { path, query, fullPath: search ? `${path}?${search}` : path } as unknown as RouteLocationNormalized
+  return { path, query, meta, fullPath: search ? `${path}?${search}` : path } as unknown as RouteLocationNormalized
 }
 
 const run = (to: RouteLocationNormalized) => middleware(to, to)
@@ -41,8 +41,8 @@ describe('admin-auth middleware', () => {
       loggedIn()
     })
 
-    expect(await run(route('/admin'))).toBeUndefined()
-    await run(route('/admin'))
+    expect(await run(route('/admin/dashboard'))).toBeUndefined()
+    await run(route('/admin/dashboard'))
     expect(fetchUser).toHaveBeenCalledTimes(1)
   })
 
@@ -66,7 +66,7 @@ describe('admin-auth middleware', () => {
     loggedIn()
 
     await run(route('/admin/login'))
-    expect(navigateToMock).toHaveBeenLastCalledWith('/admin')
+    expect(navigateToMock).toHaveBeenLastCalledWith('/admin/dashboard')
 
     await run(route('/admin/login', { redirect: '/admin/settings' }))
     expect(navigateToMock).toHaveBeenLastCalledWith('/admin/settings')
@@ -76,9 +76,27 @@ describe('admin-auth middleware', () => {
     loggedIn()
 
     await run(route('/admin/login', { redirect: '//evil.example.com/admin' }))
-    expect(navigateToMock).toHaveBeenLastCalledWith('/admin')
+    expect(navigateToMock).toHaveBeenLastCalledWith('/admin/dashboard')
 
     await run(route('/admin/login', { redirect: 'https://evil.example.com' }))
-    expect(navigateToMock).toHaveBeenLastCalledWith('/admin')
+    expect(navigateToMock).toHaveBeenLastCalledWith('/admin/dashboard')
+  })
+
+  it('sends /admin to the dashboard', async () => {
+    loggedIn()
+    await run(route('/admin'))
+    expect(navigateToMock).toHaveBeenLastCalledWith('/admin/dashboard')
+  })
+
+  it('sends users without the page permission to the forbidden page', async () => {
+    loggedIn()
+    auth.user!.permissions = ['access-admin-dashboard', 'review-vehicle-listings']
+
+    await run(route('/admin/vehicles', {}, { permission: 'manage-vehicles' }))
+    expect(navigateToMock).toHaveBeenLastCalledWith({ path: '/admin/forbidden', query: { from: '/admin/vehicles' } })
+
+    navigateToMock.mockClear()
+    expect(await run(route('/admin/reviews', {}, { permission: 'review-vehicle-listings' }))).toBeUndefined()
+    expect(navigateToMock).not.toHaveBeenCalled()
   })
 })

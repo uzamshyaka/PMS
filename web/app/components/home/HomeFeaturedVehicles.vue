@@ -9,9 +9,10 @@ const GROUPS: { type: ListingType, title: string, cta: string }[] = [
   { type: 'used', title: 'Used Cars', cta: 'See all used cars' },
 ]
 
-const groups = GROUPS
-  .map((group) => ({ ...group, vehicles: catalogue.featured(4, group.type) }))
-  .filter((group) => group.vehicles.length)
+const { data: groups } = await useAsyncData('home-featured', async () => {
+  const rows = await Promise.all(GROUPS.map(async (group) => ({ ...group, vehicles: await catalogue.featured(4, group.type) })))
+  return rows.filter((group) => group.vehicles.length)
+}, { default: () => [] })
 </script>
 
 <template>

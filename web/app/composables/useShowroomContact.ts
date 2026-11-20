@@ -1,9 +1,9 @@
 /**
- * Showroom (business) contact details from runtime config. Owner contact
- * details are never shown on the public site until that policy is decided.
+ * Showroom (business) contact details, managed under Admin → Website →
+ * Contact details. Owner contact details are never shown on the public site.
  */
 export function useShowroomContact() {
-  const contact = useRuntimeConfig().public.contact
+  const contact = useSiteContent().contact
 
   const telHref = `tel:${contact.phone.replace(/[^\d+]/g, '')}`
 

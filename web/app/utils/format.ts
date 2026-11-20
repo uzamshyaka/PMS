@@ -1,14 +1,14 @@
 // Fixed locale so server-rendered and client-rendered text are identical.
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
-/** 5490000 -> "KES 5,490,000" */
-export function formatKes(amount: number): string {
-  return `KES ${number.format(amount)}`
+/** 5490000 -> "KES 5,490,000"; empty (incomplete drafts) -> "—" */
+export function formatKes(amount: number | null | undefined): string {
+  return amount === null || amount === undefined ? '—' : `KES ${number.format(amount)}`
 }
 
-/** 45000 -> "45,000 km" */
-export function formatKm(km: number): string {
-  return `${number.format(km)} km`
+/** 45000 -> "45,000 km"; empty -> "—" */
+export function formatKm(km: number | null | undefined): string {
+  return km === null || km === undefined ? '—' : `${number.format(km)} km`
 }
 
 /** "2026-10-02" or "2026-10-02T09:15:00Z" -> "2 Oct 2026" (Nairobi time) */

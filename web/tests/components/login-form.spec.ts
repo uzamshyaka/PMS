@@ -42,7 +42,7 @@ describe('LoginForm', () => {
     await submit('admin@example.com', 'secret')
 
     expect(login).toHaveBeenCalledWith({ email: 'admin@example.com', password: 'secret', remember: false })
-    expect(navigateToMock).toHaveBeenCalledWith('/admin')
+    expect(navigateToMock).toHaveBeenCalledWith('/admin/dashboard')
   })
 
   it('shows server-side field errors', async () => {

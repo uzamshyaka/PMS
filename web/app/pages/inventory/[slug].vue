@@ -3,7 +3,8 @@ import type { IconName } from '~/utils/icons'
 
 const route = useRoute()
 const catalogue = useVehicleCatalogue()
-const vehicle = catalogue.findBySlug(String(route.params.slug))
+const { data } = await useAsyncData(`vehicle-${route.params.slug}`, () => catalogue.findBySlug(String(route.params.slug)))
+const vehicle = data.value
 
 if (!vehicle) {
   throw createError({ statusCode: 404, statusMessage: 'Vehicle not found', fatal: true })

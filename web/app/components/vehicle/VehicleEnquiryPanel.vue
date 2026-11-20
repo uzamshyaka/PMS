@@ -3,6 +3,8 @@ import type { PublicVehicle } from '~/types/vehicle'
 
 const props = defineProps<{ vehicle: PublicVehicle }>()
 const contact = useShowroomContact()
+// Sample listings are not real, so they get no enquiry form.
+const isDemo = useRuntimeConfig().public.demoCatalogue === true
 
 // Business contact only. Owner details are never shown on the public site.
 const whatsapp = computed(() =>
@@ -28,5 +30,6 @@ const whatsapp = computed(() =>
       </UiButton>
     </div>
     <p class="mt-5 flex items-center gap-2 text-xs text-white/50"><UiIcon name="clock" class="h-4 w-4" />{{ contact.hours }}</p>
+    <VehicleEnquiryForm v-if="!isDemo" :vehicle="vehicle" class="mt-6 border-t border-white/10 pt-6" />
   </aside>
 </template>

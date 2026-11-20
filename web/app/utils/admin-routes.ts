@@ -1,8 +1,10 @@
-export const ADMIN_HOME_PATH = '/admin'
+export const ADMIN_ROOT = '/admin'
+export const ADMIN_HOME_PATH = '/admin/dashboard'
 export const ADMIN_LOGIN_PATH = '/admin/login'
+export const ADMIN_FORBIDDEN_PATH = '/admin/forbidden'
 
 export function isAdminPath(path: string): boolean {
-  return path === ADMIN_HOME_PATH || path.startsWith(`${ADMIN_HOME_PATH}/`)
+  return path === ADMIN_ROOT || path.startsWith(`${ADMIN_ROOT}/`)
 }
 
 /**

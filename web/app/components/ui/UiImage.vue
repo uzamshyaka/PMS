@@ -27,9 +27,9 @@ onMounted(() => {
 <template>
   <div class="overflow-hidden">
     <slot v-if="failed" name="fallback">
-      <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-carbon via-graphite to-ink text-white/40">
-        <UiIcon name="camera" class="h-8 w-8" />
-        <span class="label-caps text-[10px]">Photo coming soon</span>
+      <div class="@container absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-carbon via-graphite to-ink text-white/40">
+        <UiIcon name="camera" class="h-4 w-4 @min-[10rem]:h-8 @min-[10rem]:w-8" />
+        <span class="label-caps hidden text-[10px] @min-[10rem]:inline">Photo coming soon</span>
       </div>
     </slot>
     <img
