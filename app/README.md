@@ -1,3 +1,7 @@
+> **Retired.** This Vue SPA has been replaced by the Nuxt app in [`web/`](../web). It is not
+> part of the Docker stack or the development workflow and is kept only for reference until
+> it is deleted. Do not add features here.
+
 # app
 
 This template should help get you started developing with Vue 3 in Vite.

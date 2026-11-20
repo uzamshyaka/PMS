@@ -16,6 +16,12 @@ return [
     'default' => env('FILESYSTEM_DISK', 'local'),
 
     /*
+    | Disk for vehicle photos. Defaults to the S3 bucket configured below
+    | (AWS in production, the local SeaweedFS S3 service in Docker).
+    */
+    'vehicle_images_disk' => env('VEHICLE_IMAGES_DISK', 's3'),
+
+    /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------

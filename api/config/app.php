@@ -55,6 +55,16 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Origin of the Nuxt frontend. Used for CORS. Comma-separate multiple origins.
+    */
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
+    /*
+    | Requests per minute allowed on /api routes, per user (or IP for guests).
+    */
+    'api_rate_limit' => (int) env('API_RATE_LIMIT', 60),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

@@ -1,3 +1,7 @@
+# Local development stack. Not intended for production use.
+# Database credentials come from the root .env file (copy .env.example).
+# Migrations are NOT run on startup; run them explicitly:
+#   docker compose exec api php artisan migrate --seed
 services:
   api:
     build: ./api
@@ -8,16 +12,43 @@ services:
       - /var/www/html/vendor
     env_file:
       - ./api/.env
+    # Single source of truth for DB connection inside Docker (overrides api/.env).
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # Vehicle photos go to an S3 bucket. Locally: the SeaweedFS "s3" service below.
+      # In production, point these at a real AWS S3 bucket instead.
+      VEHICLE_IMAGES_DISK: s3
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-local}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-local}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_BUCKET: ${S3_BUCKET:-car-showcase}
+      AWS_ENDPOINT: http://s3:8333
+      AWS_URL: ${S3_PUBLIC_URL:-http://localhost:8334/car-showcase}
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      s3:
+        condition: service_started
 
-  app:
-    build: ./app
+  web:
+    build: ./web
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
-      - ./app:/usr/src/app
+      - ./web:/usr/src/app
       - /usr/src/app/node_modules
+      - /usr/src/app/.nuxt
+    environment:
+      # URL the *browser* uses to reach the API.
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8081}
+      # URL the Nuxt *server* uses for server-side rendering (inside Docker).
+      NUXT_API_BASE_SERVER: http://api:8000
     depends_on:
       - api
 
@@ -25,14 +56,31 @@ services:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: laravel
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: laravel
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+      # Creates carshowcase_test on first start of a fresh volume.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Local S3-compatible object storage for vehicle photos (development only).
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    command: server -s3 -s3.port=8333 -dir=/data -ip.bind=0.0.0.0
+    ports:
+      - "8334:8333"
+    volumes:
+      - s3_data:/data
 
 volumes:
   db_data:
+  s3_data:
