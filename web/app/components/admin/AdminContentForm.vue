@@ -3,6 +3,7 @@ import { useVuelidate } from '@vuelidate/core'
 import { between, email, helpers, maxLength, required } from '@vuelidate/validators'
 import type { ContentSection, ContentValues } from '~/types/admin'
 import type { ContentField, ContentGroup } from '~/types/content-form'
+import { plainClone } from '~/utils/plain-clone'
 
 /**
  * Simple schema-driven form for website content and settings (no page
@@ -16,7 +17,7 @@ const saving = ref(false)
 const form = reactive<ContentValues>({})
 
 const { data, error, refresh } = useAsyncData(`admin-content-${props.section}`, () => services.content.get(props.section), { server: false })
-watch(data, (values) => { if (values) Object.assign(form, structuredClone(toRaw(values))) }, { immediate: true })
+watch(data, (values) => { if (values) Object.assign(form, plainClone(toRaw(values))) }, { immediate: true })
 
 const needsVehicles = props.groups.some((g) => g.fields.some((f) => f.type === 'vehicles'))
 const { data: vehicles } = useAsyncData(`admin-content-vehicles`, async () => (needsVehicles ? (await services.vehicles.list({ page: 1, perPage: 100, status: 'published', filters: {} })).items : []), { server: false, default: () => [] })
@@ -60,7 +61,7 @@ async function pickImage(key: string, files: FileList | null) {
 async function save() {
   if (!(await v$.value.$validate())) return
   saving.value = true
-  await run(() => services.content.save(props.section, structuredClone(toRaw(form))), 'Changes saved')
+  await run(() => services.content.save(props.section, plainClone(toRaw(form))), 'Changes saved')
   saving.value = false
 }
 </script>
