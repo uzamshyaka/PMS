@@ -27,5 +27,8 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute((int) config('app.api_rate_limit', 60))
                 ->by($request->user()?->id ?: $request->ip());
         });
+
+        // Public enquiry form: 5 per hour per IP.
+        RateLimiter::for('enquiries', fn (Request $request) => Limit::perHour(5)->by('enquiry:'.$request->ip()));
     }
 }

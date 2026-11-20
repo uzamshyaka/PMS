@@ -25,13 +25,19 @@ class RolesAndPermissionsSeeder extends Seeder
         $registrar->forgetCachedPermissions();
 
         DB::transaction(function () {
+            // Keep the models and sync by model, not by name: DatabaseSeeder runs
+            // WithoutModelEvents, so Spatie's cache is not refreshed after creating
+            // permissions and a name lookup would hit the stale (empty) cache.
+            $permissions = [];
             foreach (AdminPermission::cases() as $permission) {
-                Permission::findOrCreate($permission->value, self::GUARD);
+                $permissions[$permission->value] = Permission::query()->firstOrCreate(
+                    ['name' => $permission->value, 'guard_name' => self::GUARD],
+                );
             }
 
             foreach (AdminRole::cases() as $role) {
-                Role::findOrCreate($role->value, self::GUARD)->syncPermissions(
-                    array_map(fn (AdminPermission $p) => $p->value, $role->permissions()),
+                Role::query()->firstOrCreate(['name' => $role->value, 'guard_name' => self::GUARD])->syncPermissions(
+                    array_map(fn (AdminPermission $p) => $permissions[$p->value], $role->permissions()),
                 );
             }
         });

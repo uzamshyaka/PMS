@@ -6,12 +6,14 @@ use App\Models\User;
 use App\Modules\Authentication\Enums\AdminPermission;
 use App\Modules\Authentication\Enums\AdminRole;
 use App\Support\Http\ApiResponse;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class RolesAndPermissionsTest extends TestCase
@@ -59,6 +61,24 @@ class RolesAndPermissionsTest extends TestCase
         $this->assertSame(4, Role::count());
         $this->assertSame(10, Permission::count());
         $this->assertSame(2, Role::findByName('reviewer', 'web')->permissions()->count());
+    }
+
+    #[Test]
+    public function seeding_through_database_seeder_works_with_model_events_disabled(): void
+    {
+        // `php artisan migrate --seed` runs DatabaseSeeder, which uses WithoutModelEvents.
+        // Start from an empty, cached permission list to reproduce that path exactly.
+        Role::query()->delete();
+        Permission::query()->delete();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->getPermissions();
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame(4, Role::count());
+        $this->assertSame(10, Permission::count());
+        $this->assertSame(['access-admin-dashboard', 'review-vehicle-listings'],
+            Role::findByName('reviewer', 'web')->permissions->pluck('name')->sort()->values()->all());
     }
 
     #[Test]
