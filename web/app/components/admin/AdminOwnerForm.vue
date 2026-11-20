@@ -2,12 +2,13 @@
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, maxLength, required, requiredIf } from '@vuelidate/validators'
 import type { OwnerInput } from '~/types/admin'
+import { plainClone } from '~/utils/plain-clone'
 
 /** Create/edit form for vehicle owners (individuals or businesses). Owners never log in. */
 const props = defineProps<{ initial?: OwnerInput, saving?: boolean, submitLabel: string, serverErrors?: Record<string, string[]> }>()
 const emit = defineEmits<{ submit: [input: OwnerInput] }>()
 
-const form = reactive<OwnerInput>(props.initial ? structuredClone(toRaw(props.initial)) : {
+const form = reactive<OwnerInput>(props.initial ? plainClone(toRaw(props.initial)) : {
   type: 'individual', name: '', contactPerson: '', phone: '', whatsapp: '', email: '', location: '', status: 'active', notes: '',
 })
 
@@ -30,7 +31,7 @@ const errors = computed(() => Object.fromEntries(Object.keys(rules.value).map((k
 })) as Record<string, string | undefined>)
 
 async function submit() {
-  if (await v$.value.$validate()) emit('submit', structuredClone(toRaw(form)))
+  if (await v$.value.$validate()) emit('submit', plainClone(toRaw(form)))
 }
 </script>
 

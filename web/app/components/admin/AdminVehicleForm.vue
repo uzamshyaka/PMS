@@ -2,6 +2,7 @@
 import { useVuelidate } from '@vuelidate/core'
 import { between, helpers, integer, maxLength, minLength, minValue, required } from '@vuelidate/validators'
 import type { VehicleInput } from '~/types/admin'
+import { plainClone } from '~/utils/plain-clone'
 
 /**
  * Six-step vehicle wizard shared by Create and Edit. It owns the form state
@@ -21,7 +22,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ submit: [input: VehicleInput, intent: 'draft' | 'submit' | 'save'] }>()
 
 const services = useAdminServices()
-const form = reactive<VehicleInput>(props.initial ? structuredClone(toRaw(props.initial)) : emptyVehicleInput())
+const form = reactive<VehicleInput>(props.initial ? plainClone(toRaw(props.initial)) : emptyVehicleInput())
 const step = ref(0)
 const visited = ref(new Set([0]))
 const stepError = ref('')
@@ -132,7 +133,7 @@ async function submit(intent: 'draft' | 'submit' | 'save') {
     if (inspectionErrors()) { step.value = 4; stepError.value = inspectionErrors(); return }
     if (intent === 'submit' && !form.images.length) { step.value = 3; stepError.value = 'Add at least one photograph before submitting for approval.'; return }
   }
-  emit('submit', structuredClone(toRaw(form)), intent)
+  emit('submit', plainClone(toRaw(form)), intent)
 }
 
 const isLast = computed(() => step.value === VEHICLE_FORM_STEPS.length - 1)

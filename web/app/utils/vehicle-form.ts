@@ -1,4 +1,5 @@
 import type { AdminVehicle, VehicleInput } from '~/types/admin'
+import { plainClone } from '~/utils/plain-clone'
 
 export const VEHICLE_FORM_STEPS = [
   { key: 'basics', label: 'Basic information' },
@@ -57,7 +58,7 @@ export function emptyVehicleInput(): VehicleInput {
 export function toVehicleInput(v: AdminVehicle): VehicleInput {
   return {
     ...emptyVehicleInput(),
-    ...structuredClone({
+    ...plainClone({
       ownerId: v.ownerId, makeId: v.makeId, modelId: v.modelId, year: v.year, title: v.title, description: v.description,
       listingType: v.listingType, mileageKm: v.mileageKm, priceKes: v.priceKes, currency: v.currency, fuel: v.fuel,
       transmission: v.transmission, bodyStyle: v.bodyStyle, engineCc: v.engineCc, exteriorColour: v.exteriorColour,

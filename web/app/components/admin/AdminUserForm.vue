@@ -2,12 +2,13 @@
 import { useVuelidate } from '@vuelidate/core'
 import { email, helpers, maxLength, minLength, required, requiredIf } from '@vuelidate/validators'
 import type { AdminUserInput } from '~/types/admin'
+import { plainClone } from '~/utils/plain-clone'
 
 /** Create/edit admin users and assign roles (existing Phase 0 roles; no new authorization system). */
 const props = defineProps<{ initial?: AdminUserInput, saving?: boolean, submitLabel: string, serverErrors?: Record<string, string[]>, isSelf?: boolean }>()
 const emit = defineEmits<{ submit: [input: AdminUserInput] }>()
 
-const form = reactive<Required<AdminUserInput>>(props.initial ? { ...structuredClone(toRaw(props.initial)), password: '' } : { name: '', email: '', roles: [], isActive: true, password: '' })
+const form = reactive<Required<AdminUserInput>>(props.initial ? { ...plainClone(toRaw(props.initial)), password: '' } : { name: '', email: '', roles: [], isActive: true, password: '' })
 
 const msg = helpers.withMessage
 const rules = {
@@ -24,7 +25,7 @@ const err = (key: 'name' | 'email' | 'roles' | 'password') => (v$.value[key].$di
 
 async function submit() {
   if (!(await v$.value.$validate())) return
-  const { password, ...rest } = structuredClone(toRaw(form))
+  const { password, ...rest } = plainClone(toRaw(form))
   emit('submit', password ? { ...rest, password } : rest)
 }
 </script>
